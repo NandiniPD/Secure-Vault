@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SecureVault</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#080c10;--sf:#0d1117;--card:#111820;--bd:#1e2d3d;--ac:#00d4aa;--bl:#0ea5e9;--rd:#ff4757;--wn:#ffa502;--pu:#a78bfa;--tx:#e2e8f0;--mu:#4a6070;--mono:"Space Mono",monospace;--sans:"Syne",sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,212,170,.02)1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,.02)1px,transparent 1px);background-size:40px 40px;}
+#auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1;}
+.auth-box{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:44px 38px;width:100%;max-width:420px;box-shadow:0 0 60px rgba(0,212,170,.07);animation:fadeUp .4s ease both;}
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* centers horizontally */
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.li {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--ac), var(--bl));
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+}
+
+.lt {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.lt span {
+  color: var(--ac);
+}
+.logo-icon{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--ac),var(--bl));display:flex;align-items:center;justify-content:center;font-size:21px;}
+.logo-text{font-size:21px;font-weight:800; text-align: center;}.logo-text span{color:var(--ac);}
+.tabs{display:flex;background:var(--sf);border-radius:10px;padding:4px;border:1px solid var(--bd);}
+.tab{flex:1;padding:9px;background:none;border:none;color:var(--mu);font-family:var(--sans);font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:all .2s;}
+.tab.on{background:var(--ac);color:#000;}
+/* AUTH ERROR BOX */
+.auth-msg{padding:12px 14px;border-radius:8px;font-size:12px;font-family:var(--mono);margin-top:14px;line-height:1.6;border:1px solid transparent;word-break:break-word;}
+.auth-msg.err{background:rgba(255,71,87,.12);border-color:rgba(255,71,87,.45);color:#ff6b7a;font-weight:600;box-shadow:0 0 0 1px rgba(255,71,87,.2);}
+.auth-msg.suc{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.25);color:var(--ac);}
+@keyframes shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}30%{transform:translateX(6px)}45%{transform:translateX(-5px)}60%{transform:translateX(5px)}75%{transform:translateX(-3px)}90%{transform:translateX(3px)}}
+.auth-msg.err.shake{animation:shake .5s ease;}
+.form{margin-top:18px;}
+.field{margin-bottom:13px;}
+.field label{display:block;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;font-family:var(--mono);}
+input,select{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:11px 13px;color:var(--tx);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s;}
+input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(0,212,170,.1);}
+select option{background:var(--card);color:var(--tx);}
+.btn{width:100%;padding:12px;border:none;border-radius:9px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.bp{background:linear-gradient(135deg,var(--ac),var(--bl));color:#000;}
+.bp:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,170,.28);}
+.bo{background:transparent;border:1px solid var(--bd);color:var(--tx);padding:8px 14px;width:auto;font-size:11px;border-radius:7px;}
+.bo:hover{border-color:var(--ac);color:var(--ac);}
+.bd{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.22);color:var(--rd);padding:7px 12px;width:auto;font-size:11px;border-radius:7px;}
+.bw{background:rgba(255,165,2,.1);border:1px solid rgba(255,165,2,.22);color:var(--wn);padding:7px 12px;width:auto;font-size:11px;border-radius:7px;}
+.bs{padding:8px 14px;font-size:11px;width:auto;}
+#app-screen{display:none;min-height:100vh;position:relative;z-index:1;}
+.sb{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--card);border-right:1px solid var(--bd);display:flex;flex-direction:column;z-index:10;overflow-y:auto;}
+.sbl{display:flex;align-items:center;gap:9px;padding:16px 18px;border-bottom:1px solid var(--bd);}
+.ni{display:flex;align-items:center;gap:10px;padding:10px 18px;color:var(--mu);cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;border-left:3px solid transparent;}
+.ni:hover{color:var(--tx);background:rgba(255,255,255,.02);}
+.ni.on{color:var(--ac);background:rgba(0,212,170,.05);border-left-color:var(--ac);}
+.sbf{margin-top:auto;padding:13px;border-top:1px solid var(--bd);}
+.upill{display:flex;align-items:center;gap:9px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:9px 11px;margin-bottom:8px;}
+.uav{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--ac),var(--bl));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#000;flex-shrink:0;}
+.mc{margin-left:230px;padding:24px;min-height:100vh;}
+.pg{display:none;animation:fadeUp .3s ease both;}.pg.on{display:block;}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:14px;}
+.pt{font-size:21px;font-weight:800;letter-spacing:-.4px;}.ps{font-size:11px;color:var(--mu);margin-top:3px;font-family:var(--mono);}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:16px;margin-bottom:14px;}
+.ptl{font-size:11px;font-weight:700;margin-bottom:10px;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.sc{background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:14px;}.sc:hover{border-color:var(--ac);}
+.sl{font-size:9px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);margin-bottom:5px;}
+.sv{font-size:22px;font-weight:800;}.a{color:var(--ac);}.b{color:var(--bl);}.r{color:var(--rd);}.w{color:var(--wn);}
+.tm{background:#000;border:1px solid var(--ac);border-radius:11px;overflow:hidden;margin-bottom:14px;}
+.th{background:rgba(0,212,170,.07);padding:8px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,212,170,.12);}
+.tt{font-size:10px;font-weight:700;color:var(--ac);font-family:var(--mono);display:flex;align-items:center;gap:7px;}
+.td2{display:flex;gap:5px;}.dk{width:8px;height:8px;border-radius:50%;}
+.tb{padding:11px 13px;font-family:var(--mono);font-size:10px;line-height:1.95;max-height:260px;overflow-y:auto;min-height:50px;}
+.tb::-webkit-scrollbar{width:3px;}.tb::-webkit-scrollbar-thumb{background:var(--bd);}
+.tl{display:flex;gap:7px;animation:fadeUp .15s ease both;}
+.ts{color:var(--mu);flex-shrink:0;}
+.tj{color:var(--pu);}.ta{color:var(--ac);}.tr2{color:var(--bl);}.th2{color:var(--wn);}.to{color:var(--ac);}.te{color:var(--rd);}.ti{color:var(--tx);}.td3{color:var(--mu);}
+.cur{display:inline-block;width:7px;height:12px;background:var(--ac);animation:bl 1s infinite;vertical-align:middle;}
+@keyframes bl{0%,100%{opacity:1;}50%{opacity:0;}}
+.fg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:11px;}
+.fc{background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:14px;transition:all .2s;animation:fadeUp .3s ease both;}
+.fc:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.fi2{width:36px;height:36px;background:rgba(0,212,170,.07);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.fn{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+.fm{font-size:9px;color:var(--mu);font-family:var(--mono);margin-top:2px;}
+.fh{background:var(--sf);border:1px solid var(--bd);border-radius:5px;padding:6px 8px;font-size:9px;font-family:var(--mono);color:var(--mu);margin:8px 0;word-break:break-all;}
+.fa{display:flex;gap:6px;flex-wrap:wrap;}
+.bg{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;font-family:var(--mono);text-transform:uppercase;flex-shrink:0;}
+.bgo{background:rgba(0,212,170,.1);color:var(--ac);}.bgs{background:rgba(14,165,233,.1);color:var(--bl);}
+.ftabs{display:flex;background:var(--sf);border-radius:9px;padding:3px;margin-bottom:14px;border:1px solid var(--bd);width:fit-content;}
+.ftab{padding:7px 16px;background:none;border:none;color:var(--mu);font-family:var(--sans);font-size:11px;font-weight:600;border-radius:7px;cursor:pointer;transition:all .2s;}
+.ftab.on{background:var(--card);color:var(--ac);border:1px solid var(--bd);}
+.uz{border:2px dashed var(--bd);border-radius:11px;padding:34px 22px;text-align:center;cursor:pointer;transition:all .2s;background:var(--card);margin-bottom:14px;}
+.uz:hover,.uz.ov{border-color:var(--ac);background:rgba(0,212,170,.025);}
+.uz input{display:none;}
+.pb{width:100%;height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:9px;display:none;}
+.pf{height:100%;background:linear-gradient(90deg,var(--ac),var(--bl));animation:pr 1.5s ease infinite;}
+.li{width:44px;height:44px;background:linear-gradient(135deg,var(--ac),var(--bl));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;}
+.lt{background:var(--card);border:1px solid var(--bd);border-radius:11px;overflow:hidden;width:100%;border-collapse:collapse;}
+.lt th{background:var(--sf);padding:9px 11px;text-align:left;font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);border-bottom:1px solid var(--bd);}
+.lt td{padding:8px 11px;font-size:10px;font-family:var(--mono);border-bottom:1px solid rgba(30,45,61,.4);color:var(--tx);}
+.lt tr:last-child td{border-bottom:none;}.lt tr:hover td{background:rgba(255,255,255,.015);}
+.ab{padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;display:inline-block;font-family:var(--mono);}
+.UPLOAD{background:rgba(0,212,170,.1);color:var(--ac);}.DOWNLOAD{background:rgba(14,165,233,.1);color:var(--bl);}
+.SHARE,.REVOKE_SHARE{background:rgba(255,165,2,.1);color:var(--wn);}
+.DELETE,.ACCESS_DENIED,.LOGIN_FAILED{background:rgba(255,71,87,.1);color:var(--rd);}
+.LOGIN,.REGISTER{background:rgba(167,139,250,.1);color:var(--pu);}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(5px);}
+.md{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:24px;width:100%;max-width:430px;animation:fadeUp .2s ease both;}
+.md h3{font-size:16px;font-weight:800;margin-bottom:3px;}
+.ms{font-size:10px;color:var(--mu);font-family:var(--mono);margin-bottom:14px;}
+.ma{display:flex;gap:9px;margin-top:14px;}.ma .btn{flex:1;}
+.ib{background:rgba(255,165,2,.07);border:1px solid rgba(255,165,2,.18);color:var(--wn);padding:10px 12px;border-radius:7px;font-size:11px;font-family:var(--mono);margin-bottom:11px;line-height:1.7;}
+.cr{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--bd);}.cr:last-child{border-bottom:none;}
+.cb{font-weight:800;font-size:9px;padding:5px 9px;border-radius:6px;font-family:var(--mono);white-space:nowrap;min-width:76px;text-align:center;background:linear-gradient(135deg,var(--ac),var(--bl));color:#000;}
+.ci h4{font-size:11px;font-weight:700;margin-bottom:2px;}.ci p{font-size:10px;color:var(--mu);font-family:var(--mono);line-height:1.6;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--bd);border-radius:9px;padding:11px 15px;font-size:11px;font-family:var(--mono);z-index:999;animation:slideIn .3s ease both;max-width:320px;line-height:1.5;}
+.toast.success{border-color:var(--ac);}.toast.error{border-color:var(--rd);}.toast.warn{border-color:var(--wn);}
+.em{text-align:center;padding:44px 18px;color:var(--mu);}.em .ei{font-size:38px;margin-bottom:9px;opacity:.4;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pr{0%{width:0%}50%{width:70%}100%{width:100%}}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="logo">
+      <div class="li">🔐</div>
+      <div class="lt">Secure<span>Vault</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" id="tl" onclick="swtab('l')">Login</button>
+      <button class="tab "    id="tr" onclick="swtab('r')">Register</button>
+    </div>
+    <!-- ERROR BOX: positioned after tabs, before form -->
+    <div id="auth-err" class="auth-msg err" style="display:none"></div>
+    <div id="auth-suc" class="auth-msg suc" style="display:none"></div>
+    <!-- LOGIN -->
+    <div id="lform" class="form">
+      <div class="field"><label>Username</label><input id="lu" type="text" placeholder="Enter your username" autocomplete="username"/></div>
+      <div class="field"><label>Password</label><input id="lp" type="password" placeholder="Enter your password" autocomplete="current-password"/></div>
+      <button class="btn bp" id="lbtn" onclick="doLogin()">Login</button>
+    </div>
+    <!-- REGISTER -->
+    <div id="rform" class="form" style="display:none">
+      <div class="field"><label>Username</label><input id="ru" type="text" placeholder="Choose a username" autocomplete="username"/></div>
+      <div class="field"><label>Email</label><input id="re" type="email" placeholder="your@email.com" autocomplete="email"/></div>
+      <div class="field"><label>Password</label><input id="rp" type="password" placeholder="Min 6 characters" autocomplete="new-password"/></div>
+      <button class="btn bp" id="rbtn" onclick="doRegister()">Create Account →</button>
+    </div>
+    <p style="text-align:center;font-size:10px;color:var(--mu);margin-top:14px;font-family:var(--mono)">🔒 AES-256 + RSA-2048 + JWT + SHA-256</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <nav class="sb">
+    <div class="sbl">
+      <div class="logo-icon" style="width:32px;height:32px;font-size:14px;border-radius:9px">🔐</div>
+      <div class="logo-text" style="font-size:13px">Secure<span>Vault</span></div>
+    </div>
+    <div class="ni on" onclick="sp('dash')">📊 Dashboard</div>
+    <div class="ni"    onclick="sp('files')">📁 My Files</div>
+    <div class="ni"    onclick="sp('upload')">⬆️ Upload File</div>
+    <div class="ni"    onclick="sp('logs')">📋 Audit Logs</div>
+    <div class="ni"    onclick="sp('alerts')">🚨 Security Alerts</div>
+    <div class="ni"    onclick="sp('crypto')">🔑 Crypto Info</div>
+    <!-- Viva Guide removed - not needed in final project -->
+    <div class="sbf">
+      <div class="upill">
+        <div class="uav" id="uav">U</div>
+        <div>
+          <div style="font-size:12px;font-weight:600" id="unm">User</div>
+          <div style="font-size:10px;color:var(--mu);font-family:var(--mono)">JWT authenticated</div>
+        </div>
+      </div>
+      <button class="btn bo" style="width:100%" onclick="doOut()">Logout</button>
+    </div>
+  </nav>
+  <div class="mc">
+
+    <!-- DASHBOARD -->
+    <div id="pg-dash" class="pg on">
+      <div class="ph"><div><div class="pt">Dashboard</div><div class="ps">Live crypto events — every step shown in terminal below</div></div><button class="btn bo bs" onclick="ldDash()">↻ Refresh</button></div>
+      <div id="net-banner" style="background:rgba(0,212,170,.06);border:1px solid rgba(0,212,170,.25);border-radius:10px;padding:11px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="font-size:10px;color:var(--mu);font-family:var(--mono)">📶 Other users on this network must open:</div>
+        <div id="srv-url" style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--ac);letter-spacing:.5px">Loading server URL...</div>
+        <button class="bo" style="font-size:9px;padding:3px 10px;border-radius:5px;cursor:pointer" onclick="cpUrl()">Copy</button>
+      </div>
+      <div class="tm">
+        <div class="th">
+          <div class="tt"><div class="td2"><div class="dk" style="background:#ff5f57"></div><div class="dk" style="background:#ffbd2e"></div><div class="dk" style="background:#28c840"></div></div> SecureVault Live Security Terminal</div>
+          <button class="bo" style="font-size:9px;padding:3px 8px;border-radius:5px;cursor:pointer" onclick="clrTm()">Clear</button>
+        </div>
+        <div class="tb" id="tm"><span style="color:var(--mu)">Waiting... Login, upload or download to see AES, RSA, JWT steps live here.<span class="cur"></span></span></div>
+      </div>
+      <div class="sg">
+        <div class="sc"><div class="sl">My Files</div><div class="sv a" id="sf">—</div></div>
+        <div class="sc"><div class="sl">Uploads</div><div class="sv a" id="su">—</div></div>
+        <div class="sc"><div class="sl">Downloads</div><div class="sv b" id="sd">—</div></div>
+        <div class="sc"><div class="sl">My Logins</div><div class="sv b" id="sus">—</div></div>
+        <div class="sc"><div class="sl">Failed Logins</div><div class="sv w" id="sfl">—</div></div>
+        <div class="sc"><div class="sl">Access Denied</div><div class="sv r" id="sad">—</div></div>
+        <div class="sc"><div class="sl">Shares</div><div class="sv a" id="ssh">—</div></div>
+        <div class="sc"><div class="sl">Deletions</div><div class="sv r" id="sdl">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="ptl">🔐 Active Security Stack</div>
+        <div class="cr"><div class="cb">AES-256</div><div class="ci"><h4>File Encryption</h4><p>Encrypts file bytes → UUID.enc on disk. Unique key per file. Called in file_handler.py → aes_encrypt()</p></div></div>
+        <div class="cr"><div class="cb">RSA-2048</div><div class="ci"><h4>Key Exchange</h4><p>Locks AES key before storing in DB. Called in file_handler.py → rsa_encrypt_aes_key(). Only private key can unlock.</p></div></div>
+        <div class="cr"><div class="cb">JWT HS256</div><div class="ci"><h4>Authentication</h4><p>Signed token in every HTTP request. Called in auth.py → generate_jwt_token() after login.</p></div></div>
+        <div class="cr"><div class="cb">SHA-256</div><div class="ci"><h4>Integrity Check</h4><p>Fingerprint at upload, verified at download. Called in file_handler.py → verify_integrity()</p></div></div>
+      </div>
+    </div>
+
+    <!-- MY FILES -->
+    <div id="pg-files" class="pg">
+      <div class="ph"><div><div class="pt">My Files</div><div class="ps">Files you uploaded + files shared with you</div></div><button class="btn bp bs" onclick="sp('upload')">⬆ Upload</button></div>
+      <div class="ftabs">
+        <button class="ftab on" onclick="swFTab('mine',this)">📁 My Uploads</button>
+        <button class="ftab"    onclick="swFTab('shared',this)">📨 Shared With Me</button>
+        <button class="ftab"    onclick="swFTab('ishared',this)">🔗 I Shared</button>
+      </div>
+      <div id="gmine" class="fg2"></div>
+      <div id="gshared" class="fg2" style="display:none"></div>
+      <div id="gishared" style="display:none"></div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div id="pg-upload" class="pg">
+      <div class="ph"><div><div class="pt">Upload File</div><div class="ps">Max 10 MB • Blocked: .exe .bat .sh • Go to Dashboard to watch live crypto</div></div></div>
+      <div class="uz" id="uz" onclick="document.getElementById('finput').click()">
+        <input type="file" id="finput" onchange="onFSel(event)"/>
+        <div style="font-size:32px;margin-bottom:8px">📤</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Click to select or drag &amp; drop</div>
+        <div style="font-size:11px;color:var(--mu);font-family:var(--mono)">AES-256 encrypts file • RSA-2048 protects key • SHA-256 fingerprints it</div>
+        <div class="pb" id="pb"><div class="pf"></div></div>
+      </div>
+      <div id="sfc" style="display:none;background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:14px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="font-size:26px" id="sico">📄</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px" id="snam">—</div>
+            <div style="font-size:10px;color:var(--mu);font-family:var(--mono)" id="ssiz">—</div>
+          </div>
+          <button class="btn bp bs" onclick="doUp()">🔒 Encrypt &amp; Upload →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUDIT LOGS -->
+    <div id="pg-logs" class="pg">
+      <div class="ph"><div><div class="pt">Audit Logs</div><div class="ps">Every action — who, what, when, IP address</div></div><button class="btn bo bs" onclick="ldLogs()">↻ Refresh</button></div>
+      <div style="overflow-x:auto"><table class="lt">
+        <thead><tr><th>Time</th><th>User</th><th>Action</th><th>File</th><th>Details</th><th>IP</th></tr></thead>
+        <tbody id="logb"><tr><td colspan="6" style="text-align:center;color:var(--mu);padding:26px">Loading...</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- SECURITY ALERTS -->
+    <div id="pg-alerts" class="pg">
+      <div class="ph"><div><div class="pt">Security Alerts</div><div class="ps">Failed logins &amp; unauthorized access attempts</div></div><button class="btn bo bs" onclick="ldAlerts()">↻ Refresh</button></div>
+      <div class="panel" style="border-color:rgba(255,71,87,.25);margin-bottom:14px">
+        <div class="ptl">⚠️ What triggers an alert?</div>
+        <div style="font-size:10px;font-family:var(--mono);line-height:2;color:var(--mu)">
+          <span style="color:var(--rd)">LOGIN_FAILED</span> → Wrong password OR unregistered username — exact reason shown to user in login page<br>
+          <span style="color:var(--rd)">ACCESS_DENIED</span> → User tried to download a file without permission — blocked and logged
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="lt">
+        <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th><th>IP</th></tr></thead>
+        <tbody id="altb"><tr><td colspan="5" style="text-align:center;color:var(--mu);padding:26px">Loading...</td></tr></tbody>
+      </table></div>
+    </div>
+
+    <!-- CRYPTO INFO -->
+    <div id="pg-crypto" class="pg">
+      <div class="ph"><div><div class="pt">Crypto Info</div><div class="ps">Where exactly each algorithm is used in the code</div></div></div>
+      <div class="panel">
+        <div class="ptl">📂 Exact Code Location of Each Algorithm</div>
+        <div style="font-family:var(--mono);font-size:10px;line-height:2.3;color:var(--mu)">
+          <div><span style="color:var(--ac)">AES encrypt</span>     → file_handler.py → upload_file()   → enc_result = aes_encrypt(file_data, aes_key)</div>
+          <div><span style="color:var(--ac)">AES decrypt</span>     → file_handler.py → download_file() → original_data = aes_decrypt(enc_data, iv, aes_key)</div>
+          <div><span style="color:var(--bl)">RSA encrypt key</span> → file_handler.py → upload_file()   → enc_aes_key = rsa_encrypt_aes_key(aes_key, public_key)</div>
+          <div><span style="color:var(--bl)">RSA decrypt key</span> → file_handler.py → download_file() → aes_key = rsa_decrypt_aes_key(rec["encrypted_aes_key"], private_key)</div>
+          <div><span style="color:var(--wn)">SHA-256 hash</span>    → file_handler.py → upload_file()   → original_hash = compute_sha256(file_data)</div>
+          <div><span style="color:var(--wn)">SHA-256 verify</span>  → file_handler.py → download_file() → verify_integrity(original_data, rec["sha256_hash"])</div>
+          <div><span style="color:var(--pu)">JWT generate</span>    → auth.py         → login_user()    → token = generate_jwt_token(user_id, username)</div>
+          <div><span style="color:var(--pu)">JWT verify</span>      → run.py          → @jwt_required   → payload = verify_jwt_token(token)</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ptl">🔑 Server RSA-2048 Public Key</div>
+        <div id="pkd" style="background:var(--sf);border:1px solid var(--bd);border-radius:7px;padding:11px;font-family:var(--mono);font-size:9px;color:var(--mu);word-break:break-all;line-height:1.7">Loading...</div>
+      </div>
+      <div class="panel">
+        <div class="ptl">⚡ AES-256 vs DES Benchmark</div>
+        <p style="font-size:10px;color:var(--mu);font-family:var(--mono);margin-bottom:11px">Proves empirically why AES replaced DES. Show this in your presentation.</p>
+        <button class="btn bo bs" onclick="runBench()" id="bb">▶ Run Benchmark (100KB)</button>
+        <div id="br" style="margin-top:11px;display:none;background:var(--sf);border:1px solid var(--bd);border-radius:7px;padding:11px;font-family:var(--mono);font-size:10px;line-height:1.9;white-space:pre"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div id="sm" class="mo" style="display:none" onclick="bgcl(event)">
+  <div class="md">
+    <h3>🔗 Share File</h3>
+    <div class="ms" id="sms">Grant a registered user access to this file</div>
+    <input type="hidden" id="sfid"/>
+    <div id="snub" class="ib" style="display:none">
+      ⚠️ No other registered users found.<br>
+      Open a new tab → localhost:5000 → Register another account → come back here.<br>
+      <span style="color:var(--ac)">Note: Any user who registered on this server (same python run.py) will appear here, regardless of which browser/device they used.</span>
+    </div>
+    <div id="sff">
+      <div class="field"><label>Share with user</label><select id="suser"><option value="">Loading...</option></select></div>
+      <div class="field" style="margin-top:10px"><label>Permission</label>
+        <select id="sperm">
+          <option value="read">👁 Read only — can download</option>
+          <option value="read_write">✏️ Read &amp; Write — can download &amp; delete</option>
+        </select>
+      </div>
+    </div>
+    <div class="ma">
+      <button class="btn bo" onclick="clMo()">Cancel</button>
+      <button class="btn bp" id="sok" onclick="doSh()">Share →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var token=null,cu=null,selF=null,aFiles=[],curFTab='mine';
+
+function tsNow(){return new Date().toTimeString().slice(0,8);}
+function tlog(lines){
+  var t=document.getElementById('tm');
+  var ph=t.querySelector('span');if(ph)ph.remove();
+  lines.forEach(function(l,i){
+    setTimeout(function(){
+      var el=document.createElement('div');el.className='tl';
+      el.innerHTML='<span class="ts">['+tsNow()+']</span><span class="t'+l.t+'">'+l.m+'</span>';
+      t.appendChild(el);t.scrollTop=t.scrollHeight;
+    },i*80);
+  });
+}
+function clrTm(){document.getElementById('tm').innerHTML='<span style="color:var(--mu)">Cleared.<span class="cur"></span></span>';}
+
+/* ── AUTH ERRORS ──────────────────────────────────────────────
+   Shows exact message from server in a red box with shake effect.
+   "No account found with username X." → not registered
+   "Incorrect password."               → wrong password          */
+function showErr(msg){
+  var el=document.getElementById('auth-err');
+  el.textContent=msg;
+  el.classList.remove('shake');
+  el.style.display='block';
+  // Force reflow so animation replays every time
+  void el.offsetWidth;
+  el.classList.add('shake');
+  document.getElementById('auth-suc').style.display='none';
+}
+function showSuc(msg){
+  var el=document.getElementById('auth-suc');
+  el.textContent=msg;
+  el.style.display='block';
+  document.getElementById('auth-err').style.display='none';
+}
+function clearMsgs(){
+  document.getElementById('auth-err').style.display='none';
+  document.getElementById('auth-suc').style.display='none';
+}
+
+function swtab(t){
+  document.getElementById('tl').classList.toggle('on',t==='l');
+  document.getElementById('tr').classList.toggle('on',t==='r');
+  document.getElementById('lform').style.display=t==='l'?'block':'none';
+  document.getElementById('rform').style.display=t==='r'?'block':'none';
+  clearMsgs();
+}
+
+async function doLogin(){
+  var u=document.getElementById('lu').value.trim();
+  var p=document.getElementById('lp').value;
+  if(!u&&!p){showErr('Please enter your username and password');return;}
+  if(!u){showErr('Please enter your username');return;}
+  if(!p){showErr('Please enter your password');return;}
+  var btn=document.getElementById('lbtn');
+  btn.textContent='Logging in...';btn.disabled=true;
+  clearMsgs();
+  try{
+    var r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    var d=await r.json();
+    if(r.ok){
+      token=d.token;cu={id:d.user_id,username:d.username};
+      btn.textContent='Login';btn.disabled=false;
+      enterApp();
+    }else{
+      btn.textContent='Login';btn.disabled=false;
+      showErr(d.error||'Login failed');
+    }
+  }catch(e){
+    btn.textContent='Login;';btn.disabled=false;
+    showErr('Cannot connect to server. Run: python run.py');
+  }
+}
+
+async function doRegister(){
+  var u=document.getElementById('ru').value.trim();
+  var e=document.getElementById('re').value.trim();
+  var p=document.getElementById('rp').value;
+  if(!u||!e||!p){showErr('All fields are required');return;}
+  if(p.length<6){showErr('Password must be at least 6 characters');return;}
+  var btn=document.getElementById('rbtn');
+  btn.textContent='Creating...';btn.disabled=true;clearMsgs();
+  try{
+    var r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,email:e,password:p})});
+    var d=await r.json();
+    if(r.ok){showSuc('Account created! Please login.');swtab('l');document.getElementById('lu').value=u;}
+    else showErr(d.error||'Registration failed');
+  }catch(e2){showErr('Cannot connect to server.');}
+  btn.textContent='Create Account →';btn.disabled=false;
+}
+
+function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  document.getElementById('unm').textContent=cu.username;
+  document.getElementById('uav').textContent=cu.username[0].toUpperCase();
+  tlog([
+    {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+    {t:'o',m:'LOGIN SUCCESS - user: "'+cu.username+'"'},
+    {t:'j',m:'JWT TOKEN GENERATED (HMAC-SHA256 signed)'},
+    {t:'j',m:'  header  = {"alg":"HS256","typ":"JWT"}'},
+    {t:'j',m:'  payload = {user_id:'+cu.id+', username:"'+cu.username+'", exp:"+24h"}'},
+    {t:'j',m:'  token = '+token.substring(0,50)+'...'},
+    {t:'d3',m:'  Sent in Authorization: Bearer header on every API request'},
+    {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+  ]);
+  ldDash();ldPK();ldServerInfo();
+}
+function doOut(){token=null;cu=null;selF=null;aFiles=[];document.getElementById('app-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';clearMsgs();}
+function H(){return{'Authorization':'Bearer '+token,'Content-Type':'application/json'};}
+
+function sp(n){
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.ni').forEach(function(x){x.classList.remove('on');});
+  document.getElementById('pg-'+n).classList.add('on');
+  var m={dash:0,files:1,upload:2,logs:3,alerts:4,crypto:5};
+  if(m[n]!==undefined)document.querySelectorAll('.ni')[m[n]].classList.add('on');
+  if(n==='dash')ldDash();
+  if(n==='files')ldFiles();
+  if(n==='logs')ldLogs();
+  if(n==='alerts')ldAlerts();
+}
+
+async function ldServerInfo(){
+  try{
+    var r=await fetch('/api/server-info',{headers:H()});var d=await r.json();
+    document.getElementById('srv-url').textContent=d.url||'http://localhost:5000';
+  }catch(e){
+    document.getElementById('srv-url').textContent='http://localhost:5000';
+  }
+}
+function cpUrl(){
+  var u=document.getElementById('srv-url').textContent;
+  navigator.clipboard.writeText(u).then(function(){toast('Server URL copied!','success');});
+}
+
+async function ldDash(){
+  try{
+    var r=await fetch('/api/logs/stats',{headers:H()});var d=await r.json();
+    document.getElementById('sf').textContent=d.TOTAL_FILES||0;
+    document.getElementById('su').textContent=d.UPLOAD||0;
+    document.getElementById('sd').textContent=d.DOWNLOAD||0;
+    document.getElementById('sus').textContent=d.LOGIN||0;
+    document.getElementById('sfl').textContent=d.LOGIN_FAILED||0;
+    document.getElementById('sad').textContent=d.ACCESS_DENIED||0;
+    document.getElementById('ssh').textContent=d.SHARE||0;
+    document.getElementById('sdl').textContent=d.DELETE||0;
+  }catch(e){}
+}
+
+function swFTab(tab,btn){
+  curFTab=tab;
+  document.querySelectorAll('.ftab').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  document.getElementById('gmine').style.display=tab==='mine'?'':'none';
+  document.getElementById('gshared').style.display=tab==='shared'?'':'none';
+  document.getElementById('gishared').style.display=tab==='ishared'?'':'none';
+  if(tab==='ishared')ldIShared();else renderFiles();
+}
+
+async function ldFiles(){
+  document.getElementById('gmine').innerHTML=em('Loading...');
+  document.getElementById('gshared').innerHTML=em('Loading...');
+  try{
+    var r=await fetch('/api/files',{headers:H()});var d=await r.json();
+    aFiles=d.files||[];renderFiles();
+  }catch(e){document.getElementById('gmine').innerHTML=em('Failed to load files.');}
+}
+
+function renderFiles(){
+  var mine=aFiles.filter(function(f){return f.access_type==='owner';});
+  var shr=aFiles.filter(function(f){return f.access_type!=='owner';});
+  document.getElementById('gmine').innerHTML=mine.length?mine.map(fcard).join(''):em('No files uploaded yet.');
+  document.getElementById('gshared').innerHTML=shr.length?shr.map(fcard).join(''):em('No files shared with you yet.');
+}
+
+function fcard(f){
+  var iso = f.access_type === 'owner';
+  var nm = f.original_filename || '?';
+  var ow = f.owner_name || f.owner || '?';
+
+  return `
+  <div class="fc">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="fi2">${fic(nm)}</div>
+        <div>
+          <div class="fn" title="${esc(nm)}">${esc(nm)}</div>
+          <div class="fm">${fmtB(f.file_size)} - ${fmtD(f.uploaded_at)}</div>
+        </div>
+      </div>
+      <span class="bg ${iso ? 'bgo' : 'bgs'}">${iso ? 'Owner' : 'Shared'}</span>
+    </div>
+
+    <div class="fh">SHA-256: ${f.sha256_hash ? f.sha256_hash.substring(0,28)+'...' : 'N/A'}</div>
+
+    <div style="font-size:9px;color:var(--mu);font-family:var(--mono);margin-bottom:8px">
+      Owner: ${esc(ow)} | AES-256 on disk
+    </div>
+
+    <div class="fa">
+      <button class="btn bo bs" onclick="dlF(${f.id}, '${esc(nm)}')">Download</button>
+      ${
+        iso
+        ? `<button class="btn bo bs" onclick="opSh(${f.id}, '${esc(nm)}')">Share</button>
+           <button class="btn bd bs" onclick="delF(${f.id})">Delete</button>
+           <button class="btn bw bs" style="margin-left:4px" onclick="tamperF(${f.id}, '${esc(nm)}')">SHA-256 Tamper Demo</button>`
+        : ''
+      }
+    </div>
+  </div>`;
+}
+
+async function ldIShared(){
+  var g=document.getElementById('gishared');g.innerHTML=em('Loading...');
+  try{
+    var r=await fetch('/api/files/shared-by-me',{headers:H()});var d=await r.json();
+    var sh=d.shares||[];
+    if(!sh.length){g.innerHTML=em('You have not shared any files yet.');return;}
+    g.innerHTML = `
+    <div style="overflow-x:auto">
+      <table class="lt">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Shared With</th>
+            <th>Permission</th>
+            <th>When</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sh.map(s => `
+            <tr>
+              <td>${esc(s.original_filename)}</td>
+              <td>${esc(s.shared_with)}</td>
+              <td><span class="ab SHARE">${s.permission}</span></td>
+              <td>${fmtD(s.granted_at)}</td>
+              <td>
+                <button class="btn bw bs" onclick="rvk(${s.id}, '${esc(s.shared_with)}')">
+                  Revoke
+                </button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }catch(e){g.innerHTML=em('Failed to load');}
+}
+
+async function rvk(fid,uname){
+  if(!confirm('Revoke '+uname+"'s access?"))return;
+  try{
+    var r2=await fetch('/api/users',{headers:H()});var d2=await r2.json();
+    var u=(d2.users||[]).find(function(x){return x.username===uname;});
+    if(!u){toast('User not found','error');return;}
+    var r=await fetch('/api/files/'+fid+'/revoke',{method:'POST',headers:H(),body:JSON.stringify({user_id:u.id})});
+    var d=await r.json();
+    if(r.ok){toast('Access revoked for '+uname,'success');ldIShared();}
+    else toast(d.error||'Failed','error');
+  }catch(e){toast('Failed to revoke','error');}
+}
+
+async function dlF(id,name){
+  toast('Decrypting "'+name+'"...');sp('dash');
+  tlog([
+    {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+    {t:'i',m:'DOWNLOAD REQUEST - file_id:'+id+' "'+name+'"'},
+    {t:'j',m:'JWT token verified - user: "'+cu.username+'"'},
+    {t:'i',m:'Checking file_access table for permission...'},
+    {t:'r2',m:'RSA-2048: private_key.decrypt(encrypted_aes_key) - AES key recovered'},
+    {t:'a',m:'AES-256-CBC: Cipher(AES(key),CBC(iv)).decrypt(ciphertext) - bytes restored'},
+    {t:'h2',m:'SHA-256: sha256(decrypted) == stored_hash ?'},
+  ]);
+  try{
+    var r=await fetch('/api/files/'+id+'/download',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok){
+      var e=await r.json();
+      var msg=e.error||'Download failed';
+      var lines=[{t:'e',m:'BLOCKED: '+msg}];
+      if((r.status||0)===403){
+        lines.push({t:'e',m:'ACCESS_DENIED logged to audit_logs'});
+      }
+      if((r.status||0)===409){
+        lines.push({t:'e',m:'SHA-256 INTEGRITY CHECK FAILED — tampering detected'});
+      }
+      lines.push({t:'d3',m:'―――――――――――――――――――――――――――――――'});
+      tlog(lines);
+      toast(msg,'error');return;
+    }
+    var blob=await r.blob();
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+    tlog([{t:'o',m:'SHA-256 MATCH - file is intact'},{t:'o',m:'DOWNLOAD COMPLETE - "'+name+'"'},{t:'d3',m:'―――――――――――――――――――――――――――――――'}]);
+    toast('"'+name+'" downloaded - SHA-256 verified');ldDash();
+  }catch(e){toast('Download failed','error');}
+}
+
+async function tamperF(id,name){
+  if(!confirm('This demo will corrupt the stored SHA-256 hash for "'+name+'". Next download should fail integrity check. Continue?'))return;
+  try{
+    var r=await fetch('/api/files/'+id+'/tamper-hash',{method:'POST',headers:H()});
+    var d=await r.json();
+    if(r.ok){
+      toast(d.message||'Hash tampered for demo. Now try downloading.', 'warn');
+      tlog([
+        {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+        {t:'h2',m:'DEMO: Stored SHA-256 hash for "'+name+'" has been intentionally flipped'},
+        {t:'h2',m:'Next DOWNLOAD should return: "Integrity check FAILED — file may have been tampered with"'},
+        {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+      ]);
+    }else{
+      toast(d.error||'Failed to tamper hash','error');
+    }
+  }catch(e){toast('Failed to tamper hash','error');}
+}
+
+async function delF(id){
+  if(!confirm('Delete this file permanently?'))return;
+  try{
+    var r=await fetch('/api/files/'+id,{method:'DELETE',headers:H()});var d=await r.json();
+    if(r.ok){toast(d.message||'Deleted','success');ldFiles();ldDash();}
+    else toast(d.error||'Delete failed','error');
+  }catch(e){toast('Delete failed','error');}
+}
+
+function onFSel(e){
+  var f=e.target.files[0];if(!f)return;
+  selF=f;
+  document.getElementById('sfc').style.display='';
+  document.getElementById('snam').textContent=f.name;
+  document.getElementById('ssiz').textContent=fmtB(f.size)+' - '+(f.type||'unknown');
+  document.getElementById('sico').textContent=fic(f.name);
+}
+
+async function doUp(){
+  if(!selF)return;
+  document.getElementById('pb').style.display='';sp('dash');
+  tlog([
+    {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+    {t:'i',m:'UPLOAD STARTED - "'+selF.name+'" ('+fmtB(selF.size)+')'},
+    {t:'j',m:'JWT verified in Authorization header'},
+    {t:'i',m:'Validating: size and file type check...'},
+    {t:'h2',m:'SHA-256: hashlib.sha256(file_bytes).hexdigest() - stored in DB'},
+    {t:'a',m:'AES KEY: os.urandom(32) = 256-bit unique random key'},
+    {t:'a',m:'AES-256-CBC: Cipher(AES(key),CBC(iv)).encrypt(bytes) - saved as UUID.enc'},
+    {t:'r2',m:'RSA-2048: public_key.encrypt(aes_key, OAEP) - stored in DB'},
+  ]);
+  var fd2=new FormData();fd2.append('file',selF);
+  try{
+    var r=await fetch('/api/files/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd2});
+    var d=await r.json();document.getElementById('pb').style.display='none';
+    if(r.ok){
+      tlog([{t:'o',m:'UPLOAD COMPLETE - file_id:'+d.file_id},{t:'o',m:'  SHA-256: '+(d.sha256?d.sha256.substring(0,32)+'...':'computed')},{t:'o',m:'  Disk: '+(d.stored_as||'UUID.enc')+' (AES ciphertext only)'},{t:'d3',m:'―――――――――――――――――――――――――――――――'}]);
+      toast('"'+selF.name+'" encrypted & uploaded!');
+      selF=null;document.getElementById('sfc').style.display='none';document.getElementById('finput').value='';ldDash();
+    }else{
+      tlog([{t:'e',m:'UPLOAD FAILED: '+d.error}]);
+      toast(d.error||'Upload failed','error');
+    }
+  }catch(e){document.getElementById('pb').style.display='none';toast('Upload failed. Is server running?','error');}
+}
+
+var uzEl=document.getElementById('uz');
+uzEl.addEventListener('dragover',function(e){e.preventDefault();uzEl.classList.add('ov');});
+uzEl.addEventListener('dragleave',function(){uzEl.classList.remove('ov');});
+uzEl.addEventListener('drop',function(e){
+  e.preventDefault();uzEl.classList.remove('ov');
+  var f=e.dataTransfer.files[0];if(!f)return;
+  selF=f;document.getElementById('sfc').style.display='';
+  document.getElementById('snam').textContent=f.name;
+  document.getElementById('ssiz').textContent=fmtB(f.size);
+  document.getElementById('sico').textContent=fic(f.name);
+});
+
+async function opSh(fid,fname){
+  document.getElementById('sfid').value=fid;
+  document.getElementById('sms').textContent='Share "'+fname+'" with another registered user';
+  document.getElementById('snub').style.display='none';
+  document.getElementById('sff').style.display='';
+  document.getElementById('sok').disabled=false;
+  var sel=document.getElementById('suser');
+  sel.innerHTML='<option>Loading users...</option>';sel.disabled=true;
+  document.getElementById('sm').style.display='flex';
+  try{
+    var r=await fetch('/api/users',{headers:H()});var d=await r.json();var us=d.users||[];
+    if(!us.length){
+      sel.innerHTML='<option>No other users yet</option>';
+      document.getElementById('snub').style.display='';
+      document.getElementById('sok').disabled=true;
+    }else{
+      sel.innerHTML=us.map(function(u){return'<option value="'+u.id+'">'+esc(u.username)+' - '+esc(u.email)+'</option>';}).join('');
+      sel.disabled=false;
+    }
+  }catch(e){sel.innerHTML='<option>Failed to load users</option>';}
+}
+function bgcl(e){if(e.target===document.getElementById('sm'))clMo();}
+function clMo(){document.getElementById('sm').style.display='none';}
+
+async function doSh(){
+  var fid=document.getElementById('sfid').value;
+  var uid=document.getElementById('suser').value;
+  var perm=document.getElementById('sperm').value;
+  if(!uid){toast('Please select a user','error');return;}
+  var selEl=document.getElementById('suser');
+  var uname=selEl.options[selEl.selectedIndex]?selEl.options[selEl.selectedIndex].text:'';
+  document.getElementById('sok').textContent='Sharing...';document.getElementById('sok').disabled=true;
+  tlog([
+    {t:'d3',m:'―――――――――――――――――――――――――――――――'},
+    {t:'i',m:'SHARE REQUEST - file_id:'+fid+' target: '+esc(uname)},
+    {t:'j',m:'JWT verified - sharer: "'+cu.username+'"'},
+    {t:'i',m:'INSERT INTO file_access (file_id,user_id,permission,granted_by)'},
+    {t:'d3',m:'  Row persists in DB across server restarts'},
+  ]);
+  try{
+    var r=await fetch('/api/files/'+fid+'/share',{method:'POST',headers:H(),body:JSON.stringify({user_id:parseInt(uid),permission:perm})});
+    var d=await r.json();clMo();
+    if(r.ok){
+      tlog([{t:'o',m:'SHARE COMPLETE - '+esc(uname)+' can now see file in their vault'},{t:'d3',m:'―――――――――――――――――――――――――――――――'}]);
+      toast(d.message||'File shared!','success');ldDash();
+    }else{
+      tlog([{t:'e',m:'SHARE FAILED: '+d.error}]);toast(d.error||'Share failed','error');
+    }
+  }catch(e){clMo();toast('Share failed','error');}
+  document.getElementById('sok').textContent='Share →';document.getElementById('sok').disabled=false;
+}
+
+async function ldLogs(){
+  var b=document.getElementById('logb');
+  b.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:26px">Loading...</td></tr>';
+  try{
+    var r=await fetch('/api/logs',{headers:H()});var d=await r.json();var ls=d.logs||[];
+    if(!ls.length){b.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:26px">No logs yet</td></tr>';return;}
+    b.innerHTML=ls.map(function(l){return'<tr><td>'+fmtD(l.timestamp)+'</td><td>'+esc(l.username||'?')+'</td><td><span class="ab '+l.action+'">'+l.action+'</span></td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.filename||'-')+'</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mu)">'+esc(l.details||'-')+'</td><td>'+esc(l.ip_address||'-')+'</td></tr>';}).join('');
+  }catch(e){b.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--rd);padding:26px">Failed</td></tr>';}
+}
+
+async function ldAlerts(){
+  var b=document.getElementById('altb');
+  try{
+    var r=await fetch('/api/logs/alerts',{headers:H()});var d=await r.json();var as2=d.alerts||[];
+    if(!as2.length){b.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--ac);padding:26px">No alerts - system is clean!</td></tr>';return;}
+    b.innerHTML=as2.map(function(l){return'<tr><td>'+fmtD(l.timestamp)+'</td><td style="color:var(--rd)">'+esc(l.username||'?')+'</td><td><span class="ab '+l.action+'">'+l.action+'</span></td><td style="color:var(--rd)">'+esc(l.details||'-')+'</td><td>'+esc(l.ip_address||'-')+'</td></tr>';}).join('');
+  }catch(e){}
+}
+
+async function ldPK(){
+  try{var r=await fetch('/api/public-key');var d=await r.json();document.getElementById('pkd').textContent=d.public_key||'N/A';}
+  catch(e){document.getElementById('pkd').textContent='Run: python run.py';}
+}
+
+async function runBench(){
+  var btn=document.getElementById('bb');btn.textContent='Running...';btn.disabled=true;
+  try{
+    var r=await fetch('/api/crypto/benchmark',{headers:H()});var d=await r.json();
+    document.getElementById('br').style.display='';
+    document.getElementById('br').innerHTML=
+      'Data: '+d.data_size_kb+' KB\n\n'
+      +'AES-256:  '+d.aes_time_ms+'ms   key='+d.aes_key_bits+'-bit\n'
+      +'DES:      '+d.des_time_ms+'ms   key='+d.des_key_bits+'-bit\n\n'
+      +d.verdict;
+    tlog([{t:'o',m:'AES-256: '+d.aes_time_ms+'ms vs DES: '+d.des_time_ms+'ms'},{t:'o',m:d.verdict}]);
+  }catch(e){toast('Run server first: python run.py','error');}
+  btn.textContent='Run Again';btn.disabled=false;
+}
+
+function toast(msg,type){
+  var t=document.querySelector('.toast');if(t)t.remove();
+  var el=document.createElement('div');el.className='toast '+(type||'success');el.textContent=msg;
+  document.body.appendChild(el);setTimeout(function(){el.remove();},4000);
+}
+function em(msg){return'<div class="em"><div class="ei">📂</div><p>'+msg+'</p></div>';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtB(b){if(!b)return'0 B';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+function fmtD(s){
+  if(!s)return'-';
+  try{
+    var raw=String(s).trim();
+    // SQLite timestamps are typically UTC like "YYYY-MM-DD HH:MM:SS".
+    // Force UTC parsing so IST conversion is always correct.
+    if(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)){
+      raw=raw.replace(' ','T')+'Z';
+    }
+    var d=new Date(raw);
+    if(isNaN(d.getTime()))return s;
+    var ds=new Intl.DateTimeFormat('en-IN',{
+      timeZone:'Asia/Kolkata',
+      year:'numeric',month:'2-digit',day:'2-digit'
+    }).format(d);
+    var ts=new Intl.DateTimeFormat('en-IN',{
+      timeZone:'Asia/Kolkata',
+      hour:'2-digit',minute:'2-digit',hour12:true
+    }).format(d);
+    return ds+' '+ts+' IST';
+  }catch(e){return s;}
+}
+function fic(n){if(!n)return'?';var e=n.split('.').pop().toLowerCase();var m={pdf:'\u{1F4D5}',doc:'\u{1F4DD}',docx:'\u{1F4DD}',txt:'\u{1F4C4}',md:'\u{1F4C4}',jpg:'\u{1F5BC}',jpeg:'\u{1F5BC}',png:'\u{1F5BC}',gif:'\u{1F5BC}',mp4:'\u{1F3AC}',mp3:'\u{1F3B5}',zip:'\u{1F4E6}',rar:'\u{1F4E6}',py:'\u{1F40D}',js:'\u{1F4DC}',html:'\u{1F310}',css:'\u{1F3A8}',xlsx:'\u{1F4CA}',pptx:'\u{1F4FA}',csv:'\u{1F4CA}'};return m[e]||'\u{1F4C4}';}
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  if(document.getElementById('lform').style.display!=='none')doLogin();
+  else if(document.getElementById('rform').style.display!=='none')doRegister();
+});
+</script>
+</body>
+</html>
